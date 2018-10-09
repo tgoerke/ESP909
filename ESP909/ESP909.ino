@@ -1,3 +1,7 @@
+/* The sample player is a 11-voice fully polyphonic 44.1KHz 16-bit 1-shot wave player.
+   http://blog.dspsynth.eu/audio-hacking-on-the-esp8266/
+*/
+
 #include <Arduino.h> 
 #include "ESP8266WiFi.h"
 #include <i2s.h>
@@ -18004,14 +18008,18 @@ uint16_t SYNTH909() {
 
 
 void setup() {
-  //WiFi.forceSleepBegin();             
-  //delay(1);                               
+  WiFi.forceSleepBegin();             
+  delay(1);                               
   system_update_cpu_freq(160);
 
   i2s_begin();
   i2s_set_rate(44100);
+  pinMode(2, INPUT); //restore GPIOs taken by i2s 
+  pinMode(15, INPUT);
   
 }
+
+
 
 void loop() {
  DAC=SYNTH909();
