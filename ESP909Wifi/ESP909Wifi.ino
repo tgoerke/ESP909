@@ -1,7 +1,7 @@
 /* The sample player is a 11-voice fully polyphonic 44.1KHz 16-bit 1-shot wave player.
    http://blog.dspsynth.eu/audio-hacking-on-the-esp8266/
 
-   Please note that I am adding a const value (254) to the DAC to get rid of clicks.
+   Please note that I am adding a const value (0xFE=254) to the DAC to get rid of clicks.
    This happens in ICACHE_RAM_ATTR onTimerISR()
 */
 #include <Arduino.h> 
@@ -17,14 +17,16 @@ extern "C" {
 #include "user_interface.h"
 }
 
+int pot, oldpot;
+
 #define GPIO_IN ((volatile uint32_t*) 0x60000318)    // register contains gpio pin values of ESP8266 in read mode + some extra values (need to be truncated)
 
 char ssid[] = "DLRobotik"; //  your network SSID (name)
 char pass[] = "Aquabot!";    // your network password (use for WPA, or use as key for WEP)
 
 // Forward declaration
-void OnMidiNoteOn(byte channel, byte note, byte velocity);
-void OnMidiNoteOff(byte channel, byte note, byte velocity);
+void MidiNoteOn(byte channel, byte note, byte velocity);
+void MidiNoteOff(byte channel, byte note, byte velocity);
 
 uint32_t i2sACC;
 uint8_t i2sCNT=32;
@@ -18030,7 +18032,7 @@ void ICACHE_RAM_ATTR onTimerISR(){
   
   while (!(i2s_is_full())) { //Don't block the ISR
     
-    DAC=254+SYNTH909(); // orig code is DAC=SYNTH909(); 
+    DAC=SYNTH909()+0xFE;
 
     //----------------- Pulse Density Modulated 16-bit I2S DAC --------------------
      for (uint8_t i=0;i<32;i++) { 
@@ -18054,18 +18056,18 @@ void ICACHE_RAM_ATTR onTimerISR(){
 
 
 void setup() {
-  //WiFi.forceSleepBegin();             
-  //delay(1);                               
+  WiFi.forceSleepBegin();
+  delay(1);
   system_update_cpu_freq(160);
 
   //Serial.begin(9600);
-  
+/*
   WiFi.begin(ssid, pass);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }
-
+*/
   //Serial.print(F("IP address is ")); 
   //Serial.println(WiFi.localIP()); 
 
@@ -18079,11 +18081,25 @@ void setup() {
 }
 
 void loop() {
+  
+ //Serial.println(pot);
+
+ long m;
+ int beat[16] = {35, 44, 38, 44, 35, 44, 38, 44, 35, 44, 38, 44, 47, 44, 46, 44};
  //int n = random(35,51);
- for (byte n=35; n<=51; n++) {
-  MidiNoteOn(10,n,100); 
+ //for (byte n=35; n<=51; n++) {
+ for (byte n=0; n<16; n++) {
+  MidiNoteOn(10,beat[n],100);
   delay(500);
- }  
+   //pot = analogRead(A0);
+   //if (abs(pot-oldpot)>10) { MidiNoteOn(10,beat[n],100); oldpot=pot; }
+ }
+ //if (millis()-m > 10000) { MidiNoteOn(10,35,100); m=millis(); }
+ //Serial.println(pot);
+ //if (pot >200) { MidiNoteOn(10,44,100); delay(5000); }
+
+ //}
+ //if (random(10)>3) MidiNoteOn(10,35,100);
 } 
 
 
